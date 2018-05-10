@@ -448,6 +448,7 @@ def sample():
 
         # Dropout probability 0 (keep probability 1) for sampling
         dp = 1.0
+        print("***************** dec_out[bidx] shape = {}".format(dec_out[bidx].shape))
         _, _, poses3d = model.step(sess, enc_in[bidx], dec_out[bidx], dp, isTraining=False)
 
         # denormalize

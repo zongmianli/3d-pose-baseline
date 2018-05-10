@@ -389,6 +389,46 @@ def read_2d_predictions( actions, data_dir ):
 
   return train_set, test_set, data_mean, data_std, dim_to_ignore, dim_to_use
 
+def read_2d_pred_handtools(data_mean, data_std, dim_to_use):
+  '''
+  Load SH prediction on handtool videos
+  '''
+  j2d_dir = '/sequoia/data3/zoli/contact/baseline/3d_pose_baseline'
+  video_names = [
+    'barbell_0002', 'barbell_0003', 'barbell_0007', 'barbell_0008', 'barbell_0010',
+    'carjack_0001', 'carjack_0002', 'carjack_0003', 'carjack_0004', 'carjack_0005',
+    'hammer_0001', 'hammer_0003', 'hammer_0006', 'hammer_0007', 'hammer_0010',
+    'scythe_0001', 'scythe_0002', 'scythe_0003', 'scythe_0005', 'scythe_0006',
+    'wrench_0001', 'wrench_0002', 'wrench_0003', 'wrench_0009', 'wrench_0010']
+
+  # Permutation that goes from SH detections to H36M ordering.
+  SH_TO_GT_PERM = np.array([SH_NAMES.index( h ) for h in H36M_NAMES if h != '' and h in SH_NAMES])
+  assert np.all( SH_TO_GT_PERM == np.array([6,2,1,0,3,4,5,7,8,9,13,14,15,12,11,10]) )
+
+  test_set = {}
+  for video_name in video_names:
+      j2d_path = os.path.join(j2d_dir, video_name, 'pose_2d.h5')
+
+      print('Reading video {0}, j2d_path: {1}'.format(video_name, j2d_path))
+      with h5py.File( j2d_path, 'r' ) as h5f:
+          poses = h5f['preds'][:]
+          # Permute the loaded data to make it compatible with H36M
+          poses = poses[:,SH_TO_GT_PERM,:]
+          # Reshape into n x (32*2) matrix
+          poses = np.reshape(poses,[poses.shape[0], -1])
+          poses_final = np.zeros([poses.shape[0], len(H36M_NAMES)*2])
+
+          dim_use_x    = np.where(np.array([x != '' and x != 'Neck/Nose' for x in H36M_NAMES]))[0] * 2
+          dim_use_y    = dim_use_x+1
+
+          dim_use = np.zeros(len(SH_NAMES)*2,dtype=np.int32)
+          dim_use[0::2] = dim_use_x
+          dim_use[1::2] = dim_use_y
+          poses_final[:,dim_use] = poses
+          test_set[video_name] = poses_final
+
+  test_set  = normalize_data( test_set,  data_mean, data_std, dim_to_use )
+  return test_set
 
 def create_2d_data( actions, data_dir, rcams ):
   """
