@@ -1,5 +1,8 @@
 
-"""Predicting 3d poses from 2d joints"""
+"""Predicting 3d poses from 2d joints
+usage:
+python src/predict_handtools.py --camera_frame --residual --batch_norm --dropout 0.5 --max_norm --use_sh --epochs 200 --load 4874200
+"""
 
 from __future__ import absolute_import
 from __future__ import division
